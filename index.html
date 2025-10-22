@@ -594,8 +594,12 @@
                     if (i === j) {
                         row.push(1);
                     } else {
-                        const values1 = processedData.map(d => d[numericFields[i]]).filter(v => !isNaN(v));
-                        const values2 = processedData.map(d => d[numericFields[j]]).filter(v => !isNaN(v));
+                        const valuePairs = processedData.map(d => [d[numericFields[i]], d[numericFields[j]]]);
+                        const filteredPairs = valuePairs.filter(pair => !isNaN(pair[0]) && !isNaN(pair[1]));
+
+                        const values1 = filteredPairs.map(pair => pair[0]);
+                        const values2 = filteredPairs.map(pair => pair[1]);
+
                         row.push(calculateCorrelation(values1, values2));
                     }
                 }
