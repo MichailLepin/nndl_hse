@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -196,63 +196,63 @@
     <div class="container">
         <div class="header">
             <h1>🚴‍♂️ Seoul Bike Data EDA</h1>
-            <p>Интерактивный анализ данных проката велосипедов в Сеуле</p>
+            <p>Interactive analysis of bike rental data in Seoul</p>
         </div>
 
         <div id="loading" class="loading">
             <div class="spinner"></div>
-            <p>Загружаем и анализируем данные...</p>
+            <p>Loading and analyzing data...</p>
         </div>
 
         <div id="content" style="display: none;">
-            <!-- Первые 5 строк -->
+            <!-- First 5 rows -->
             <div class="card">
-                <h2>📋 Первые 5 строк данных</h2>
+                <h2>📋 First 5 rows of data</h2>
                 <div id="first-rows-table"></div>
             </div>
 
-            <!-- Сводная статистика -->
+            <!-- Summary statistics -->
             <div class="card">
-                <h2>📊 Сводная статистика</h2>
+                <h2>📊 Summary Statistics</h2>
                 <div class="stat-grid">
                     <div>
-                        <h3>Числовые переменные</h3>
+                        <h3>Numeric Variables</h3>
                         <div id="numeric-stats-table"></div>
                     </div>
                     <div>
-                        <h3>Пропущенные значения</h3>
+                        <h3>Missing Values</h3>
                         <div id="missing-values-table"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Распределения -->
+            <!-- Distributions -->
             <div class="card">
-                <h2>📈 Распределения переменных</h2>
+                <h2>📈 Variable Distributions</h2>
                 <div id="distribution-plots"></div>
             </div>
 
-            <!-- Тренды по времени -->
+            <!-- Temporal trends -->
             <div class="card">
-                <h2>⏰ Временные тренды</h2>
+                <h2>⏰ Temporal Trends</h2>
                 <div id="temporal-trends"></div>
             </div>
 
-            <!-- Категориальный анализ -->
+            <!-- Categorical analysis -->
             <div class="card">
-                <h2>📊 Категориальный анализ</h2>
+                <h2>📊 Categorical Analysis</h2>
                 <div id="categorical-analysis"></div>
             </div>
 
-            <!-- Корреляционная матрица -->
+            <!-- Correlation matrix -->
             <div class="card">
-                <h2>🔗 Корреляционная матрица</h2>
+                <h2>🔗 Correlation Matrix</h2>
                 <div id="correlation-matrix"></div>
             </div>
 
-            <!-- Инсайты -->
+            <!-- Insights -->
             <div class="card insights">
-                <h2>💡 Автоматические инсайты</h2>
+                <h2>💡 Automatic Insights</h2>
                 <div id="insights-content"></div>
             </div>
         </div>
@@ -360,13 +360,13 @@
 04/12/2017,353,22,-5.3,45,2.5,2000,-15.3,0,0,0,Winter,No Holiday,Yes
 04/12/2017,248,23,-5.8,44,2.4,2000,-16.1,0,0,0,Winter,No Holiday,Yes
 `;
-        // Функция для форматирования чисел
+        // Function to format numbers
         function formatNumber(num, decimals = 2) {
             if (num === null || num === undefined || isNaN(num)) return 'N/A';
             return Number(num).toFixed(decimals);
         }
 
-        // Функция для вычисления статистики
+        // Function to calculate statistics
         function calculateStats(values) {
             const numericValues = values.filter(v => !isNaN(v) && v !== null && v !== undefined);
             if (numericValues.length === 0) return { mean: 0, median: 0, std: 0, count: 0 };
@@ -382,7 +382,7 @@
             return { mean, median, std, count: numericValues.length };
         }
 
-        // Функция для создания HTML таблицы
+        // Function to create HTML table
         function createTable(headers, rows, id) {
             let html = '<table><thead><tr>';
             headers.forEach(header => {
@@ -402,15 +402,15 @@
             document.getElementById(id).innerHTML = html;
         }
 
-        // Функция для загрузки и обработки данных
+        // Function to load and process data
         function loadData() {
             Papa.parse(embeddedCsvData, {
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
                     if (results.errors.length > 0) {
-                        console.error('Ошибки при парсинге CSV:', results.errors);
-                        showError('Ошибка при загрузке данных');
+                        console.error('CSV parsing errors:', results.errors);
+                        showError('Error loading data');
                         return;
                     }
                     
@@ -419,24 +419,24 @@
                     renderAnalysis();
                 },
                 error: function(error) {
-                    console.error('Ошибка загрузки файла:', error);
-                    showError('Не удалось загрузить файл данных');
+                    console.error('File loading error:', error);
+                    showError('Failed to load data file');
                 }
             });
         }
 
-        // Функция для обработки данных
+        // Function to process data
         function processData() {
             processedData = data.map(row => {
                 const processed = { ...row };
                 
-                // Парсинг даты
+                // Date parsing
                 if (row.Date) {
                     const [day, month, year] = row.Date.split('/');
                     processed.Date = new Date(year, month - 1, day);
                 }
                 
-                // Конвертация числовых полей
+                // Convert numeric fields
                 const numericFields = [
                     'Rented Bike Count', 'Hour', 'Temperature(°C)', 'Humidity(%)',
                     'Wind speed (m/s)', 'Visibility (10m)', 'Dew point temperature(°C)',
@@ -452,17 +452,17 @@
                 return processed;
             }).filter(row => row.Date && !isNaN(row['Rented Bike Count']));
             
-            console.log(`Обработано ${processedData.length} записей`);
+            console.log(`Processed ${processedData.length} records`);
         }
 
-        // Функция для отображения первых 5 строк
+        // Function to display first 5 rows
         function renderFirstRows() {
             const headers = Object.keys(processedData[0] || {});
             const rows = processedData.slice(0, 5).map(row => 
                 headers.map(header => {
                     const value = row[header];
                     if (value instanceof Date) {
-                        return value.toLocaleDateString('ru-RU');
+                        return value.toLocaleDateString('en-US');
                     }
                     return value;
                 })
@@ -471,7 +471,7 @@
             createTable(headers, rows, 'first-rows-table');
         }
 
-        // Функция для отображения статистики
+        // Function to display statistics
         function renderStats() {
             const numericFields = [
                 'Rented Bike Count', 'Temperature(°C)', 'Humidity(%)',
@@ -493,13 +493,13 @@
             });
             
             createTable(
-                ['Переменная', 'Среднее', 'Медиана', 'Стд. отклонение', 'Количество'],
+                ['Variable', 'Mean', 'Median', 'Std Dev', 'Count'],
                 statsRows,
                 'numeric-stats-table'
             );
         }
 
-        // Функция для отображения пропущенных значений
+        // Function to display missing values
         function renderMissingValues() {
             const allFields = Object.keys(processedData[0] || {});
             const missingRows = allFields.map(field => {
@@ -512,19 +512,19 @@
             });
             
             createTable(
-                ['Переменная', 'Пропущено', 'Процент'],
+                ['Variable', 'Missing', 'Percentage'],
                 missingRows,
                 'missing-values-table'
             );
         }
 
-        // Функция для создания графиков распределений
+        // Function to create distribution plots
         function renderDistributions() {
             const distributions = [
-                { field: 'Rented Bike Count', title: 'Количество арендованных велосипедов' },
-                { field: 'Temperature(°C)', title: 'Температура (°C)' },
-                { field: 'Humidity(%)', title: 'Влажность (%)' },
-                { field: 'Wind speed (m/s)', title: 'Скорость ветра (м/с)' }
+                { field: 'Rented Bike Count', title: 'Number of Rented Bikes' },
+                { field: 'Temperature(°C)', title: 'Temperature (°C)' },
+                { field: 'Humidity(%)', title: 'Humidity (%)' },
+                { field: 'Wind speed (m/s)', title: 'Wind Speed (m/s)' }
             ];
             
             distributions.forEach((dist, index) => {
@@ -543,8 +543,8 @@
                 
                 const layout = {
                     title: dist.title,
-                    xaxis: { title: 'Значение' },
-                    yaxis: { title: 'Частота' },
+                    xaxis: { title: 'Value' },
+                    yaxis: { title: 'Frequency' },
                     margin: { t: 40, b: 40, l: 40, r: 40 }
                 };
                 
@@ -557,9 +557,9 @@
             });
         }
 
-        // Функция для создания временных трендов
+        // Function to create temporal trends
         function renderTemporalTrends() {
-            // Тренд по часам
+            // Hourly trend
             const hourlyData = {};
             processedData.forEach(row => {
                 const hour = row.Hour;
@@ -579,15 +579,15 @@
                 y: hourlyStats.map(h => h.avg),
                 type: 'scatter',
                 mode: 'lines+markers',
-                name: 'Среднее количество велосипедов',
+                name: 'Average number of bikes',
                 line: { color: '#667eea', width: 3 },
                 marker: { size: 8 }
             };
             
             const hourlyLayout = {
-                title: 'Среднее количество арендованных велосипедов по часам',
-                xaxis: { title: 'Час дня' },
-                yaxis: { title: 'Количество велосипедов' },
+                title: 'Average number of rented bikes by hour',
+                xaxis: { title: 'Hour of day' },
+                yaxis: { title: 'Number of bikes' },
                 margin: { t: 40, b: 40, l: 40, r: 40 }
             };
             
@@ -598,7 +598,7 @@
             
             Plotly.newPlot('hourly-trend', [hourlyTrace], hourlyLayout, {responsive: true});
             
-            // Тренд по месяцам
+            // Monthly trend
             const monthlyData = {};
             processedData.forEach(row => {
                 const month = row.Date.getMonth();
@@ -608,8 +608,8 @@
                 monthlyData[month].push(row['Rented Bike Count']);
             });
             
-            const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 
-                               'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             
             const monthlyStats = Object.keys(monthlyData).map(month => ({
                 month: parseInt(month),
@@ -620,14 +620,14 @@
                 x: monthlyStats.map(m => monthNames[m.month]),
                 y: monthlyStats.map(m => m.avg),
                 type: 'bar',
-                name: 'Среднее количество велосипедов',
+                name: 'Average number of bikes',
                 marker: { color: '#764ba2' }
             };
             
             const monthlyLayout = {
-                title: 'Среднее количество арендованных велосипедов по месяцам',
-                xaxis: { title: 'Месяц' },
-                yaxis: { title: 'Количество велосипедов' },
+                title: 'Average number of rented bikes by month',
+                xaxis: { title: 'Month' },
+                yaxis: { title: 'Number of bikes' },
                 margin: { t: 40, b: 40, l: 40, r: 40 }
             };
             
@@ -639,7 +639,7 @@
             Plotly.newPlot('monthly-trend', [monthlyTrace], monthlyLayout, {responsive: true});
         }
 
-        // Функция для категориального анализа
+        // Function for categorical analysis
         function renderCategoricalAnalysis() {
             const categories = ['Seasons', 'Holiday', 'Functioning Day'];
             
@@ -661,9 +661,9 @@
                 }));
                 
                 const layout = {
-                    title: `Распределение количества велосипедов по ${category}`,
+                    title: `Distribution of bike count by ${category}`,
                     xaxis: { title: category },
-                    yaxis: { title: 'Количество велосипедов' },
+                    yaxis: { title: 'Number of bikes' },
                     margin: { t: 40, b: 40, l: 40, r: 40 }
                 };
                 
@@ -676,7 +676,7 @@
             });
         }
 
-        // Функция для создания корреляционной матрицы
+        // Function to create correlation matrix
         function renderCorrelationMatrix() {
             const numericFields = [
                 'Rented Bike Count', 'Temperature(°C)', 'Humidity(%)',
@@ -684,7 +684,7 @@
                 'Solar Radiation (MJ/m2)', 'Rainfall(mm)', 'Snowfall (cm)'
             ];
             
-            // Вычисление корреляций
+            // Calculate correlations
             const correlations = [];
             for (let i = 0; i < numericFields.length; i++) {
                 const row = [];
@@ -719,7 +719,7 @@
             };
             
             const layout = {
-                title: 'Корреляционная матрица числовых переменных',
+                title: 'Correlation Matrix of Numeric Variables',
                 margin: { t: 40, b: 100, l: 100, r: 40 }
             };
             
@@ -731,7 +731,7 @@
             Plotly.newPlot('correlation-matrix', [trace], layout, {responsive: true});
         }
 
-        // Функция для вычисления корреляции Пирсона
+        // Function to calculate Pearson correlation
         function calculateCorrelation(x, y) {
             if (x.length !== y.length || x.length === 0) return 0;
             
@@ -748,11 +748,11 @@
             return denominator === 0 ? 0 : numerator / denominator;
         }
 
-        // Функция для генерации инсайтов
+        // Function to generate insights
         function generateInsights() {
             const insights = [];
             
-            // Анализ пиковых часов
+            // Peak hours analysis
             const hourlyData = {};
             processedData.forEach(row => {
                 const hour = row.Hour;
@@ -769,9 +769,9 @@
             
             const peakHour = hourlyStats[0];
             const lowHour = hourlyStats[hourlyStats.length - 1];
-            insights.push(`🕐 <strong>Пиковые часы:</strong> Максимальный спрос в ${peakHour.hour}:00 (${formatNumber(peakHour.avg)} велосипедов), минимальный в ${lowHour.hour}:00 (${formatNumber(lowHour.avg)} велосипедов).`);
+            insights.push(`🕐 <strong>Peak Hours:</strong> Maximum demand at ${peakHour.hour}:00 (${formatNumber(peakHour.avg)} bikes), minimum at ${lowHour.hour}:00 (${formatNumber(lowHour.avg)} bikes).`);
             
-            // Анализ по месяцам
+            // Monthly analysis
             const monthlyData = {};
             processedData.forEach(row => {
                 const month = row.Date.getMonth();
@@ -781,8 +781,8 @@
                 monthlyData[month].push(row['Rented Bike Count']);
             });
             
-            const monthNames = ['Январе', 'Феврале', 'Марте', 'Апреле', 'Мае', 'Июне', 
-                               'Июле', 'Августе', 'Сентябре', 'Октябре', 'Ноябре', 'Декабре'];
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                               'July', 'August', 'September', 'October', 'November', 'December'];
             
             const monthlyStats = Object.keys(monthlyData).map(month => ({
                 month: parseInt(month),
@@ -791,9 +791,9 @@
             
             const peakMonth = monthlyStats[0];
             const lowMonth = monthlyStats[monthlyStats.length - 1];
-            insights.push(`📅 <strong>Сезонность:</strong> Наибольший спрос в ${monthNames[peakMonth.month]} (${formatNumber(peakMonth.avg)} велосипедов), наименьший в ${monthNames[lowMonth.month]} (${formatNumber(lowMonth.avg)} велосипедов).`);
+            insights.push(`📅 <strong>Seasonality:</strong> Highest demand in ${monthNames[peakMonth.month]} (${formatNumber(peakMonth.avg)} bikes), lowest in ${monthNames[lowMonth.month]} (${formatNumber(lowMonth.avg)} bikes).`);
             
-            // Анализ погодных эффектов
+            // Weather effects analysis
             const tempCorr = calculateCorrelation(
                 processedData.map(d => d['Temperature(°C)']).filter(v => !isNaN(v)),
                 processedData.map(d => d['Rented Bike Count']).filter(v => !isNaN(v))
@@ -804,47 +804,47 @@
             );
             
             if (tempCorr > 0.3) {
-                insights.push(`🌡️ <strong>Влияние температуры:</strong> Сильная положительная корреляция с температурой (${formatNumber(tempCorr, 3)}). Чем теплее, тем больше велосипедов арендуется.`);
+                insights.push(`🌡️ <strong>Temperature Effect:</strong> Strong positive correlation with temperature (${formatNumber(tempCorr, 3)}). Warmer weather leads to more bike rentals.`);
             } else if (tempCorr < -0.3) {
-                insights.push(`🌡️ <strong>Влияние температуры:</strong> Сильная отрицательная корреляция с температурой (${formatNumber(tempCorr, 3)}). Чем холоднее, тем больше велосипедов арендуется.`);
+                insights.push(`🌡️ <strong>Temperature Effect:</strong> Strong negative correlation with temperature (${formatNumber(tempCorr, 3)}). Colder weather leads to more bike rentals.`);
             } else {
-                insights.push(`🌡️ <strong>Влияние температуры:</strong> Слабая корреляция с температурой (${formatNumber(tempCorr, 3)}).`);
+                insights.push(`🌡️ <strong>Temperature Effect:</strong> Weak correlation with temperature (${formatNumber(tempCorr, 3)}).`);
             }
             
             if (humidityCorr < -0.2) {
-                insights.push(`💧 <strong>Влияние влажности:</strong> Отрицательная корреляция с влажностью (${formatNumber(humidityCorr, 3)}). Чем выше влажность, тем меньше велосипедов арендуется.`);
+                insights.push(`💧 <strong>Humidity Effect:</strong> Negative correlation with humidity (${formatNumber(humidityCorr, 3)}). Higher humidity leads to fewer bike rentals.`);
             } else {
-                insights.push(`💧 <strong>Влияние влажности:</strong> Слабая корреляция с влажностью (${formatNumber(humidityCorr, 3)}).`);
+                insights.push(`💧 <strong>Humidity Effect:</strong> Weak correlation with humidity (${formatNumber(humidityCorr, 3)}).`);
             }
             
-            // Анализ пропущенных данных
+            // Missing data analysis
             const totalMissing = processedData.reduce((sum, row) => {
                 return sum + Object.values(row).filter(val => val === null || val === undefined || val === '').length;
             }, 0);
             
             if (totalMissing === 0) {
-                insights.push(`✅ <strong>Качество данных:</strong> Пропущенных значений не обнаружено. Данные готовы для моделирования.`);
+                insights.push(`✅ <strong>Data Quality:</strong> No missing values detected. Data is ready for modeling.`);
             } else {
-                insights.push(`⚠️ <strong>Качество данных:</strong> Обнаружено ${totalMissing} пропущенных значений. Рекомендуется предобработка данных.`);
+                insights.push(`⚠️ <strong>Data Quality:</strong> Found ${totalMissing} missing values. Data preprocessing recommended.`);
             }
             
-            // Рекомендации для моделирования
-            insights.push(`🤖 <strong>Рекомендации для моделирования:</strong> Для прогнозирования спроса на велосипеды рекомендуется использовать временные признаки (час, месяц), погодные условия (температура, влажность, осадки) и категориальные переменные (сезон, праздники).`);
+            // Modeling recommendations
+            insights.push(`🤖 <strong>Modeling Recommendations:</strong> For bike demand prediction, use temporal features (hour, month), weather conditions (temperature, humidity, precipitation), and categorical variables (season, holidays).`);
             
             document.getElementById('insights-content').innerHTML = insights.map(insight => `<p>${insight}</p>`).join('');
         }
 
-        // Функция для отображения ошибки
+        // Function to display error
         function showError(message) {
             document.getElementById('loading').innerHTML = `
                 <div class="error">
-                    <h3>Ошибка загрузки данных</h3>
+                    <h3>Data Loading Error</h3>
                     <p>${message}</p>
                 </div>
             `;
         }
 
-        // Основная функция рендеринга
+        // Main rendering function
         function renderAnalysis() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').style.display = 'block';
@@ -859,7 +859,7 @@
             generateInsights();
         }
 
-        // Запуск приложения
+        // Application startup
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
         });
