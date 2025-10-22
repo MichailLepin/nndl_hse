@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EDA Seoul Bike Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .card h3 {
+            color: #2d3748;
+            margin: 20px 0 15px 0;
+            font-size: 1.4rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        tr:hover {
+            background-color: #e6fffa;
+        }
+
+        .plot-container {
+            margin: 20px 0;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .insights {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-left: 5px solid #ff6b6b;
+        }
+
+        .insights h2 {
+            color: #d63031;
+            border-bottom-color: #ff6b6b;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
+            margin: 20px 0;
+        }
+
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            table {
+                font-size: 0.9rem;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚴‍♂️ Seoul Bike Data EDA</h1>
+            <p>Интерактивный анализ данных проката велосипедов в Сеуле</p>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Загружаем и анализируем данные...</p>
+        </div>
+
+        <div id="content" style="display: none;">
+            <!-- Первые 5 строк -->
+            <div class="card">
+                <h2>📋 Первые 5 строк данных</h2>
+                <div id="first-rows-table"></div>
+            </div>
+
+            <!-- Сводная статистика -->
+            <div class="card">
+                <h2>📊 Сводная статистика</h2>
+                <div class="stat-grid">
+                    <div>
+                        <h3>Числовые переменные</h3>
+                        <div id="numeric-stats-table"></div>
+                    </div>
+                    <div>
+                        <h3>Пропущенные значения</h3>
+                        <div id="missing-values-table"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Распределения -->
+            <div class="card">
+                <h2>📈 Распределения переменных</h2>
+                <div id="distribution-plots"></div>
+            </div>
+
+            <!-- Тренды по времени -->
+            <div class="card">
+                <h2>⏰ Временные тренды</h2>
+                <div id="temporal-trends"></div>
+            </div>
+
+            <!-- Категориальный анализ -->
+            <div class="card">
+                <h2>📊 Категориальный анализ</h2>
+                <div id="categorical-analysis"></div>
+            </div>
+
+            <!-- Корреляционная матрица -->
+            <div class="card">
+                <h2>🔗 Корреляционная матрица</h2>
+                <div id="correlation-matrix"></div>
+            </div>
+
+            <!-- Инсайты -->
+            <div class="card insights">
+                <h2>💡 Автоматические инсайты</h2>
+                <div id="insights-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let data = [];
+        let processedData = [];
+
+        // Функция для форматирования чисел
+        function formatNumber(num, decimals = 2) {
+            if (num === null || num === undefined || isNaN(num)) return 'N/A';
+            return Number(num).toFixed(decimals);
+        }
+
+        // Функция для вычисления статистики
+        function calculateStats(values) {
+            const numericValues = values.filter(v => !isNaN(v) && v !== null && v !== undefined);
+            if (numericValues.length === 0) return { mean: 0, median: 0, std: 0, count: 0 };
+            
+            const sorted = numericValues.sort((a, b) => a - b);
+            const mean = numericValues.reduce((sum, val) => sum + val, 0) / numericValues.length;
+            const median = sorted.length % 2 === 0 
+                ? (sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2
+                : sorted[Math.floor(sorted.length/2)];
+            const variance = numericValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / numericValues.length;
+            const std = Math.sqrt(variance);
+            
+            return { mean, median, std, count: numericValues.length };
+        }
+
+        // Функция для создания HTML таблицы
+        function createTable(headers, rows, id) {
+            let html = '<table><thead><tr>';
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            rows.forEach(row => {
+                html += '<tr>';
+                row.forEach(cell => {
+                    html += `<td>${cell}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            
+            document.getElementById(id).innerHTML = html;
+        }
+
+        // Функция для загрузки и обработки данных
+        function loadData() {
+            Papa.parse('./SeoulBikeData.csv', {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.errors.length > 0) {
+                        console.error('Ошибки при парсинге CSV:', results.errors);
+                        showError('Ошибка при загрузке данных');
+                        return;
+                    }
+                    
+                    data = results.data;
+                    processData();
+                    renderAnalysis();
+                },
+                error: function(error) {
+                    console.error('Ошибка загрузки файла:', error);
+                    showError('Не удалось загрузить файл данных');
+                }
+            });
+        }
+
+        // Функция для обработки данных
+        function processData() {
+            processedData = data.map(row => {
+                const processed = { ...row };
+                
+                // Парсинг даты
+                if (row.Date) {
+                    const [day, month, year] = row.Date.split('/');
+                    processed.Date = new Date(year, month - 1, day);
+                }
+                
+                // Конвертация числовых полей
+                const numericFields = [
+                    'Rented Bike Count', 'Hour', 'Temperature(°C)', 'Humidity(%)',
+                    'Wind speed (m/s)', 'Visibility (10m)', 'Dew point temperature(°C)',
+                    'Solar Radiation (MJ/m2)', 'Rainfall(mm)', 'Snowfall (cm)'
+                ];
+                
+                numericFields.forEach(field => {
+                    if (row[field] !== undefined && row[field] !== '') {
+                        processed[field] = parseFloat(row[field]);
+                    }
+                });
+                
+                return processed;
+            }).filter(row => row.Date && !isNaN(row['Rented Bike Count']));
+            
+            console.log(`Обработано ${processedData.length} записей`);
+        }
+
+        // Функция для отображения первых 5 строк
+        function renderFirstRows() {
+            const headers = Object.keys(processedData[0] || {});
+            const rows = processedData.slice(0, 5).map(row => 
+                headers.map(header => {
+                    const value = row[header];
+                    if (value instanceof Date) {
+                        return value.toLocaleDateString('ru-RU');
+                    }
+                    return value;
+                })
+            );
+            
+            createTable(headers, rows, 'first-rows-table');
+        }
+
+        // Функция для отображения статистики
+        function renderStats() {
+            const numericFields = [
+                'Rented Bike Count', 'Temperature(°C)', 'Humidity(%)',
+                'Wind speed (m/s)', 'Visibility (10m)', 'Dew point temperature(°C)',
+                'Solar Radiation (MJ/m2)', 'Rainfall(mm)', 'Snowfall (cm)'
+            ];
+            
+            const statsRows = numericFields.map(field => {
+                const values = processedData.map(row => row[field]).filter(v => !isNaN(v));
+                const stats = calculateStats(values);
+                
+                return [
+                    field,
+                    formatNumber(stats.mean),
+                    formatNumber(stats.median),
+                    formatNumber(stats.std),
+                    stats.count
+                ];
+            });
+            
+            createTable(
+                ['Переменная', 'Среднее', 'Медиана', 'Стд. отклонение', 'Количество'],
+                statsRows,
+                'numeric-stats-table'
+            );
+        }
+
+        // Функция для отображения пропущенных значений
+        function renderMissingValues() {
+            const allFields = Object.keys(processedData[0] || {});
+            const missingRows = allFields.map(field => {
+                const missingCount = processedData.filter(row => 
+                    row[field] === null || row[field] === undefined || row[field] === ''
+                ).length;
+                const percentage = (missingCount / processedData.length * 100).toFixed(2);
+                
+                return [field, missingCount, `${percentage}%`];
+            });
+            
+            createTable(
+                ['Переменная', 'Пропущено', 'Процент'],
+                missingRows,
+                'missing-values-table'
+            );
+        }
+
+        // Функция для создания графиков распределений
+        function renderDistributions() {
+            const distributions = [
+                { field: 'Rented Bike Count', title: 'Количество арендованных велосипедов' },
+                { field: 'Temperature(°C)', title: 'Температура (°C)' },
+                { field: 'Humidity(%)', title: 'Влажность (%)' },
+                { field: 'Wind speed (m/s)', title: 'Скорость ветра (м/с)' }
+            ];
+            
+            distributions.forEach((dist, index) => {
+                const values = processedData.map(row => row[dist.field]).filter(v => !isNaN(v));
+                
+                const trace = {
+                    x: values,
+                    type: 'histogram',
+                    name: dist.title,
+                    nbinsx: 30,
+                    marker: {
+                        color: `hsl(${index * 90}, 70%, 50%)`,
+                        opacity: 0.7
+                    }
+                };
+                
+                const layout = {
+                    title: dist.title,
+                    xaxis: { title: 'Значение' },
+                    yaxis: { title: 'Частота' },
+                    margin: { t: 40, b: 40, l: 40, r: 40 }
+                };
+                
+                const plotDiv = document.createElement('div');
+                plotDiv.id = `dist-${index}`;
+                plotDiv.style.height = '400px';
+                document.getElementById('distribution-plots').appendChild(plotDiv);
+                
+                Plotly.newPlot(plotDiv.id, [trace], layout, {responsive: true});
+            });
+        }
+
+        // Функция для создания временных трендов
+        function renderTemporalTrends() {
+            // Тренд по часам
+            const hourlyData = {};
+            processedData.forEach(row => {
+                const hour = row.Hour;
+                if (!hourlyData[hour]) {
+                    hourlyData[hour] = [];
+                }
+                hourlyData[hour].push(row['Rented Bike Count']);
+            });
+            
+            const hourlyStats = Object.keys(hourlyData).map(hour => ({
+                hour: parseInt(hour),
+                avg: hourlyData[hour].reduce((sum, val) => sum + val, 0) / hourlyData[hour].length
+            })).sort((a, b) => a.hour - b.hour);
+            
+            const hourlyTrace = {
+                x: hourlyStats.map(h => h.hour),
+                y: hourlyStats.map(h => h.avg),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Среднее количество велосипедов',
+                line: { color: '#667eea', width: 3 },
+                marker: { size: 8 }
+            };
+            
+            const hourlyLayout = {
+                title: 'Среднее количество арендованных велосипедов по часам',
+                xaxis: { title: 'Час дня' },
+                yaxis: { title: 'Количество велосипедов' },
+                margin: { t: 40, b: 40, l: 40, r: 40 }
+            };
+            
+            const hourlyDiv = document.createElement('div');
+            hourlyDiv.id = 'hourly-trend';
+            hourlyDiv.style.height = '400px';
+            document.getElementById('temporal-trends').appendChild(hourlyDiv);
+            
+            Plotly.newPlot('hourly-trend', [hourlyTrace], hourlyLayout, {responsive: true});
+            
+            // Тренд по месяцам
+            const monthlyData = {};
+            processedData.forEach(row => {
+                const month = row.Date.getMonth();
+                if (!monthlyData[month]) {
+                    monthlyData[month] = [];
+                }
+                monthlyData[month].push(row['Rented Bike Count']);
+            });
+            
+            const monthNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 
+                               'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+            
+            const monthlyStats = Object.keys(monthlyData).map(month => ({
+                month: parseInt(month),
+                avg: monthlyData[month].reduce((sum, val) => sum + val, 0) / monthlyData[month].length
+            })).sort((a, b) => a.month - b.month);
+            
+            const monthlyTrace = {
+                x: monthlyStats.map(m => monthNames[m.month]),
+                y: monthlyStats.map(m => m.avg),
+                type: 'bar',
+                name: 'Среднее количество велосипедов',
+                marker: { color: '#764ba2' }
+            };
+            
+            const monthlyLayout = {
+                title: 'Среднее количество арендованных велосипедов по месяцам',
+                xaxis: { title: 'Месяц' },
+                yaxis: { title: 'Количество велосипедов' },
+                margin: { t: 40, b: 40, l: 40, r: 40 }
+            };
+            
+            const monthlyDiv = document.createElement('div');
+            monthlyDiv.id = 'monthly-trend';
+            monthlyDiv.style.height = '400px';
+            document.getElementById('temporal-trends').appendChild(monthlyDiv);
+            
+            Plotly.newPlot('monthly-trend', [monthlyTrace], monthlyLayout, {responsive: true});
+        }
+
+        // Функция для категориального анализа
+        function renderCategoricalAnalysis() {
+            const categories = ['Seasons', 'Holiday', 'Functioning Day'];
+            
+            categories.forEach((category, index) => {
+                const categoryData = {};
+                processedData.forEach(row => {
+                    const value = row[category];
+                    if (!categoryData[value]) {
+                        categoryData[value] = [];
+                    }
+                    categoryData[value].push(row['Rented Bike Count']);
+                });
+                
+                const traces = Object.keys(categoryData).map(catValue => ({
+                    y: categoryData[catValue],
+                    name: catValue,
+                    type: 'box',
+                    boxpoints: 'outliers'
+                }));
+                
+                const layout = {
+                    title: `Распределение количества велосипедов по ${category}`,
+                    xaxis: { title: category },
+                    yaxis: { title: 'Количество велосипедов' },
+                    margin: { t: 40, b: 40, l: 40, r: 40 }
+                };
+                
+                const plotDiv = document.createElement('div');
+                plotDiv.id = `cat-${index}`;
+                plotDiv.style.height = '400px';
+                document.getElementById('categorical-analysis').appendChild(plotDiv);
+                
+                Plotly.newPlot(plotDiv.id, traces, layout, {responsive: true});
+            });
+        }
+
+        // Функция для создания корреляционной матрицы
+        function renderCorrelationMatrix() {
+            const numericFields = [
+                'Rented Bike Count', 'Temperature(°C)', 'Humidity(%)',
+                'Wind speed (m/s)', 'Visibility (10m)', 'Dew point temperature(°C)',
+                'Solar Radiation (MJ/m2)', 'Rainfall(mm)', 'Snowfall (cm)'
+            ];
+            
+            // Вычисление корреляций
+            const correlations = [];
+            for (let i = 0; i < numericFields.length; i++) {
+                const row = [];
+                for (let j = 0; j < numericFields.length; j++) {
+                    if (i === j) {
+                        row.push(1);
+                    } else {
+                        const values1 = processedData.map(d => d[numericFields[i]]).filter(v => !isNaN(v));
+                        const values2 = processedData.map(d => d[numericFields[j]]).filter(v => !isNaN(v));
+                        row.push(calculateCorrelation(values1, values2));
+                    }
+                }
+                correlations.push(row);
+            }
+            
+            const trace = {
+                z: correlations,
+                x: numericFields,
+                y: numericFields,
+                type: 'heatmap',
+                colorscale: 'RdBu',
+                zmid: 0,
+                text: correlations.map(row => 
+                    row.map(corr => formatNumber(corr, 3))
+                ),
+                texttemplate: '%{text}',
+                textfont: { size: 10 }
+            };
+            
+            const layout = {
+                title: 'Корреляционная матрица числовых переменных',
+                margin: { t: 40, b: 100, l: 100, r: 40 }
+            };
+            
+            const plotDiv = document.createElement('div');
+            plotDiv.id = 'correlation-matrix';
+            plotDiv.style.height = '500px';
+            document.getElementById('correlation-matrix').appendChild(plotDiv);
+            
+            Plotly.newPlot('correlation-matrix', [trace], layout, {responsive: true});
+        }
+
+        // Функция для вычисления корреляции Пирсона
+        function calculateCorrelation(x, y) {
+            if (x.length !== y.length || x.length === 0) return 0;
+            
+            const n = x.length;
+            const sumX = x.reduce((sum, val) => sum + val, 0);
+            const sumY = y.reduce((sum, val) => sum + val, 0);
+            const sumXY = x.reduce((sum, val, i) => sum + val * y[i], 0);
+            const sumX2 = x.reduce((sum, val) => sum + val * val, 0);
+            const sumY2 = y.reduce((sum, val) => sum + val * val, 0);
+            
+            const numerator = n * sumXY - sumX * sumY;
+            const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+            
+            return denominator === 0 ? 0 : numerator / denominator;
+        }
+
+        // Функция для генерации инсайтов
+        function generateInsights() {
+            const insights = [];
+            
+            // Анализ пиковых часов
+            const hourlyData = {};
+            processedData.forEach(row => {
+                const hour = row.Hour;
+                if (!hourlyData[hour]) {
+                    hourlyData[hour] = [];
+                }
+                hourlyData[hour].push(row['Rented Bike Count']);
+            });
+            
+            const hourlyStats = Object.keys(hourlyData).map(hour => ({
+                hour: parseInt(hour),
+                avg: hourlyData[hour].reduce((sum, val) => sum + val, 0) / hourlyData[hour].length
+            })).sort((a, b) => b.avg - a.avg);
+            
+            const peakHour = hourlyStats[0];
+            const lowHour = hourlyStats[hourlyStats.length - 1];
+            insights.push(`🕐 <strong>Пиковые часы:</strong> Максимальный спрос в ${peakHour.hour}:00 (${formatNumber(peakHour.avg)} велосипедов), минимальный в ${lowHour.hour}:00 (${formatNumber(lowHour.avg)} велосипедов).`);
+            
+            // Анализ по месяцам
+            const monthlyData = {};
+            processedData.forEach(row => {
+                const month = row.Date.getMonth();
+                if (!monthlyData[month]) {
+                    monthlyData[month] = [];
+                }
+                monthlyData[month].push(row['Rented Bike Count']);
+            });
+            
+            const monthNames = ['Январе', 'Феврале', 'Марте', 'Апреле', 'Мае', 'Июне', 
+                               'Июле', 'Августе', 'Сентябре', 'Октябре', 'Ноябре', 'Декабре'];
+            
+            const monthlyStats = Object.keys(monthlyData).map(month => ({
+                month: parseInt(month),
+                avg: monthlyData[month].reduce((sum, val) => sum + val, 0) / monthlyData[month].length
+            })).sort((a, b) => b.avg - a.avg);
+            
+            const peakMonth = monthlyStats[0];
+            const lowMonth = monthlyStats[monthlyStats.length - 1];
+            insights.push(`📅 <strong>Сезонность:</strong> Наибольший спрос в ${monthNames[peakMonth.month]} (${formatNumber(peakMonth.avg)} велосипедов), наименьший в ${monthNames[lowMonth.month]} (${formatNumber(lowMonth.avg)} велосипедов).`);
+            
+            // Анализ погодных эффектов
+            const tempCorr = calculateCorrelation(
+                processedData.map(d => d['Temperature(°C)']).filter(v => !isNaN(v)),
+                processedData.map(d => d['Rented Bike Count']).filter(v => !isNaN(v))
+            );
+            const humidityCorr = calculateCorrelation(
+                processedData.map(d => d['Humidity(%)']).filter(v => !isNaN(v)),
+                processedData.map(d => d['Rented Bike Count']).filter(v => !isNaN(v))
+            );
+            
+            if (tempCorr > 0.3) {
+                insights.push(`🌡️ <strong>Влияние температуры:</strong> Сильная положительная корреляция с температурой (${formatNumber(tempCorr, 3)}). Чем теплее, тем больше велосипедов арендуется.`);
+            } else if (tempCorr < -0.3) {
+                insights.push(`🌡️ <strong>Влияние температуры:</strong> Сильная отрицательная корреляция с температурой (${formatNumber(tempCorr, 3)}). Чем холоднее, тем больше велосипедов арендуется.`);
+            } else {
+                insights.push(`🌡️ <strong>Влияние температуры:</strong> Слабая корреляция с температурой (${formatNumber(tempCorr, 3)}).`);
+            }
+            
+            if (humidityCorr < -0.2) {
+                insights.push(`💧 <strong>Влияние влажности:</strong> Отрицательная корреляция с влажностью (${formatNumber(humidityCorr, 3)}). Чем выше влажность, тем меньше велосипедов арендуется.`);
+            } else {
+                insights.push(`💧 <strong>Влияние влажности:</strong> Слабая корреляция с влажностью (${formatNumber(humidityCorr, 3)}).`);
+            }
+            
+            // Анализ пропущенных данных
+            const totalMissing = processedData.reduce((sum, row) => {
+                return sum + Object.values(row).filter(val => val === null || val === undefined || val === '').length;
+            }, 0);
+            
+            if (totalMissing === 0) {
+                insights.push(`✅ <strong>Качество данных:</strong> Пропущенных значений не обнаружено. Данные готовы для моделирования.`);
+            } else {
+                insights.push(`⚠️ <strong>Качество данных:</strong> Обнаружено ${totalMissing} пропущенных значений. Рекомендуется предобработка данных.`);
+            }
+            
+            // Рекомендации для моделирования
+            insights.push(`🤖 <strong>Рекомендации для моделирования:</strong> Для прогнозирования спроса на велосипеды рекомендуется использовать временные признаки (час, месяц), погодные условия (температура, влажность, осадки) и категориальные переменные (сезон, праздники).`);
+            
+            document.getElementById('insights-content').innerHTML = insights.map(insight => `<p>${insight}</p>`).join('');
+        }
+
+        // Функция для отображения ошибки
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `
+                <div class="error">
+                    <h3>Ошибка загрузки данных</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        // Основная функция рендеринга
+        function renderAnalysis() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+            
+            renderFirstRows();
+            renderStats();
+            renderMissingValues();
+            renderDistributions();
+            renderTemporalTrends();
+            renderCategoricalAnalysis();
+            renderCorrelationMatrix();
+            generateInsights();
+        }
+
+        // Запуск приложения
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+    </script>
+</body>
+</html>
